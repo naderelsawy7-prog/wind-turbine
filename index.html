@@ -1,0 +1,1227 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Wind Turbine Quick Performance Calculator</title>
+  <style>
+    :root {
+      /* EPROM palette, taken from the EPROM Suppliers Portal in Drive */
+      --primary-navy: #0d233a;
+      --secondary-navy: #153556;
+      --petro-blue: #1f4e78;
+      --accent-teal: #0d9488;
+      --accent-teal-hover: #0f766e;
+      --accent-cyan: #0284c7;
+      --accent-gold: #d97706;
+      --bg-slate: #f8fafc;
+      --bg-card: #ffffff;
+      --border-light: #e2e8f0;
+      --border-hover: #cbd5e1;
+      --text-dark: #0f172a;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      --ink: var(--text-dark);
+      --ink-soft: #334155;
+      --muted: var(--text-muted);
+      --paper: var(--bg-slate);
+      --white: var(--bg-card);
+      --line: var(--border-light);
+      --line-strong: var(--border-hover);
+      --teal: var(--accent-teal);
+      --teal-dark: var(--accent-teal-hover);
+      --teal-pale: #e0f2fe;
+      --amber: var(--accent-gold);
+      --amber-pale: #fff7ed;
+      --red: #b91c1c;
+      --red-pale: #fef2f2;
+      --shadow: 0 12px 30px rgba(13, 35, 58, .075);
+      --radius: 18px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: radial-gradient(ellipse at 88% 4%, rgba(2, 132, 199, .10), transparent 30rem), var(--paper);
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .page { width: min(1440px, calc(100% - 40px)); margin: 0 auto; }
+    .topbar {
+      height: 64px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 18px; background: var(--primary-navy); color: #ffffff;
+      border-bottom: 2px solid var(--accent-teal); border-radius: 0 0 12px 12px; gap: 20px;
+    }
+    .brand { display: inline-flex; align-items: center; gap: 11px; font-weight: 800; letter-spacing: .08em; font-size: 11px; }
+    .eprom-badge {
+      display: grid; place-items: center; min-width: 58px; height: 34px; padding: 0 9px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--accent-teal), var(--accent-cyan)); color: #ffffff;
+      font-size: 12px; font-weight: 850; letter-spacing: .12em; box-shadow: 0 2px 4px rgba(0,0,0,.2);
+    }
+    .brand small { display: block; color: var(--text-light); font-size: 8px; font-weight: 700; letter-spacing: .16em; margin-top: 2px; }
+    .top-meta { color: #cbd5e1; font-size: 11px; display: flex; align-items: center; gap: 9px; }
+    .top-dot { width: 7px; height: 7px; background: #2dd4bf; border-radius: 50%; box-shadow: 0 0 0 4px rgba(45,212,191,.16); }
+    .hero {
+      display: flex; justify-content: space-between; align-items: center; gap: 24px;
+      padding: 27px 28px; margin: 18px 0; border-radius: 16px;
+      background: linear-gradient(180deg, var(--secondary-navy) 0%, var(--primary-navy) 100%); color: #ffffff;
+    }
+    .hero-inner { max-width: 780px; }
+    .eyebrow, .section-tag { text-transform: uppercase; letter-spacing: .16em; font-size: 10px; font-weight: 800; color: #2dd4bf; }
+    h1 { margin: 8px 0 9px; max-width: 760px; font-size: clamp(34px, 5.2vw, 61px); line-height: .99; letter-spacing: -.055em; font-weight: 800; }
+    h1 span { color: #38bdf8; }
+    .hero-copy { max-width: 650px; color: #cbd5e1; margin: 0; font-size: 14px; }
+    .version-card {
+      flex: 0 0 auto; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.07); padding: 12px 15px;
+      border-radius: 10px; color: #cbd5e1; font-size: 10px; line-height: 1.45; min-width: 175px;
+    }
+    .version-card strong { display: block; color: #ffffff; font-size: 10px; letter-spacing: .11em; margin-bottom: 3px; }
+    .notice {
+      display: flex; align-items: flex-start; gap: 12px; background: #e0f2fe; color: #1f4e78;
+      border: 1px solid #bae6fd; border-radius: 12px; padding: 11px 14px; margin-bottom: 16px;
+      font-size: 11px;
+    }
+    .notice-icon {
+      width: 22px; height: 22px; flex: 0 0 22px; border-radius: 50%; display: grid; place-items: center;
+      background: var(--teal); color: #fff; font-size: 12px; font-weight: 900; margin-top: 1px;
+    }
+    .notice strong { color: var(--ink); }
+    .toolbar { display: flex; align-items: center; gap: 9px; margin: 0 0 20px; flex-wrap: wrap; }
+    .button {
+      border: 1px solid transparent; border-radius: 10px; padding: 9px 13px; font-size: 12px; font-weight: 750;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .button:hover { transform: translateY(-1px); }
+    .button.primary { background: var(--accent-teal); color: #fff; }
+    .button.primary:hover { background: var(--accent-teal-hover); }
+    .button.secondary { background: var(--white); border-color: var(--line-strong); color: var(--primary-navy); }
+    .button.secondary:hover { border-color: var(--accent-cyan); color: var(--petro-blue); }
+    .button.ghost { color: var(--petro-blue); background: transparent; border-color: transparent; }
+    .button.ghost:hover { background: #e0f2fe; }
+    .toolbar-status { color: var(--muted); font-size: 11px; margin-left: auto; }
+    .layout { display: grid; grid-template-columns: minmax(300px, 360px) minmax(0, 1fr); gap: 18px; align-items: start; }
+    .panel { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .input-panel { position: sticky; top: 14px; max-height: calc(100vh - 28px); overflow: auto; scrollbar-width: thin; scrollbar-color: #94a3b8 transparent; }
+    .panel-head {
+      min-height: 44px; padding: 11px 17px; display: flex; justify-content: space-between; align-items: center;
+      background: var(--primary-navy); border-bottom: 2px solid var(--accent-teal); color: #ffffff;
+      font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+    }
+    .panel-head .right-note { color: #94a3b8; font-size: 9px; letter-spacing: .12em; }
+    .panel-body { padding: 16px; }
+    .steps-hint { display: flex; align-items: center; gap: 7px; padding: 10px; margin-bottom: 15px; border: 1px solid #bae6fd; border-radius: 10px; background: #f0f9ff; }
+    .steps-hint > span:not(.step-number):not(.step-arrow) { min-width: 0; }
+    .step-number { width: 23px; height: 23px; flex: 0 0 23px; display: grid; place-items: center; border-radius: 50%; background: var(--accent-teal); color: #fff; font-size: 10px; font-weight: 800; }
+    .steps-hint strong { display: block; color: var(--primary-navy); font-size: 9px; line-height: 1.2; }
+    .steps-hint small { display: block; color: var(--text-muted); font-size: 8px; line-height: 1.3; margin-top: 2px; }
+    .step-arrow { color: var(--accent-cyan); font-weight: 900; padding: 0 2px; }
+    .form-section + .form-section { border-top: 1px solid #edf2f7; margin-top: 15px; padding-top: 14px; }
+    .form-section h2, .subsection-title { font-size: 13px; margin: 0 0 11px; letter-spacing: -.01em; }
+    .section-inline { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+    .section-inline .helper { color: var(--muted); font-size: 10px; }
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 11px; }
+    .field { min-width: 0; }
+    .field.full { grid-column: 1 / -1; }
+    .field label, .field .field-label { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; margin-bottom: 5px; color: var(--ink-soft); font-size: 10px; font-weight: 750; }
+    .unit { color: var(--text-muted); font-weight: 650; white-space: nowrap; }
+    input[type="number"], select {
+      width: 100%; min-height: 41px; padding: 9px 10px; border: 1px solid var(--line-strong); border-radius: 8px;
+      color: var(--ink); background: #fff; outline: none; transition: border-color .15s, box-shadow .15s;
+    }
+    input[type="number"] { font-variant-numeric: tabular-nums; }
+    input[type="number"]:focus, select:focus { border-color: var(--accent-cyan); box-shadow: 0 0 0 3px rgba(2,132,199,.12); }
+    input:disabled { color: var(--text-light); background: #f1f5f9; }
+    .field-help { margin-top: 5px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+    .advanced-settings { margin-top: 15px; border: 1px solid var(--line); border-radius: 11px; background: #f8fafc; }
+    .advanced-settings summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 14px; cursor: pointer; list-style: none; }
+    .advanced-settings summary::-webkit-details-marker { display: none; }
+    .advanced-settings summary strong { display: block; color: var(--primary-navy); font-size: 12px; }
+    .advanced-settings summary small { display: block; color: var(--muted); font-size: 9px; margin-top: 2px; }
+    .details-plus { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: #e0f2fe; color: var(--accent-cyan); font-size: 17px; font-weight: 700; flex: 0 0 auto; }
+    .advanced-settings[open] .details-plus { transform: rotate(45deg); }
+    .advanced-body { padding: 0 14px 14px; border-top: 1px solid var(--line); }
+    .advanced-body .form-section:first-child { margin-top: 13px; }
+    .field-help { margin-top: 5px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+    .switch-line { display: flex; gap: 9px; align-items: flex-start; margin-top: 11px; padding: 10px 11px; border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; }
+    .switch-line input { margin: 3px 0 0; accent-color: var(--accent-teal); }
+    .switch-line label { color: var(--ink-soft); font-size: 10px; font-weight: 700; cursor: pointer; }
+    .switch-line small { display: block; color: var(--muted); font-weight: 450; margin-top: 2px; line-height: 1.35; }
+    .height-fields { display: none; margin-top: 10px; padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px dashed var(--line-strong); }
+    .select-note { display: block; color: var(--muted); font-size: 9px; line-height: 1.35; margin-top: 5px; }
+    .hint-chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 3px 7px; background: #e0f2fe; color: var(--petro-blue); font-size: 9px; font-weight: 800; letter-spacing: .04em; }
+    .form-caution { font-size: 10px; color: var(--ink-soft); background: #f0f9ff; border-left: 3px solid var(--accent-cyan); border-radius: 2px 8px 8px 2px; padding: 9px 10px; margin-top: 10px; }
+    .error-box { display: none; background: var(--red-pale); border: 1px solid #fecaca; color: var(--red); border-radius: 8px; padding: 10px 12px; font-size: 11px; margin-bottom: 14px; }
+    .results-column { display: grid; gap: 16px; min-width: 0; }
+    .results-top { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(260px, .9fr); gap: 14px; }
+    .power-card {
+      position: relative; overflow: hidden; min-height: 184px; padding: 22px 23px; border-radius: var(--radius);
+      background: var(--primary-navy); color: white; box-shadow: var(--shadow);
+    }
+    .power-card::after {
+      content: ""; position: absolute; width: 230px; height: 230px; right: -75px; top: -100px; border-radius: 50%;
+      border: 1px solid rgba(45,212,191,.24); box-shadow: 0 0 0 24px rgba(2,132,199,.06), 0 0 0 49px rgba(45,212,191,.035);
+    }
+    .power-card .label { color: #cbd5e1; font-size: 10px; text-transform: uppercase; letter-spacing: .14em; font-weight: 750; }
+    .power-card .value { font-size: clamp(41px, 5vw, 57px); font-weight: 800; letter-spacing: -.06em; line-height: 1; margin: 13px 0 9px; font-variant-numeric: tabular-nums; }
+    .power-card .value span { color: #38bdf8; font-size: .42em; letter-spacing: -.02em; margin-left: 5px; }
+    .power-card .sub { color: #cbd5e1; font-size: 11px; position: relative; z-index: 1; }
+    .status-pill { display: inline-flex; align-items: center; gap: 6px; position: absolute; top: 20px; right: 20px; z-index: 2; border-radius: 999px; padding: 5px 9px; background: rgba(255,255,255,.11); color: #e5e7eb; font-size: 9px; font-weight: 750; }
+    .status-pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #2dd4bf; }
+    .energy-card { padding: 20px 21px; border-radius: var(--radius); background: #e0f2fe; border: 1px solid #bae6fd; min-height: 184px; }
+    .energy-card .energy-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .energy-card .label { color: var(--petro-blue); font-size: 10px; text-transform: uppercase; letter-spacing: .13em; font-weight: 800; }
+    .energy-card .big { color: var(--ink); font-size: 31px; line-height: 1.05; font-weight: 800; letter-spacing: -.05em; margin: 12px 0 3px; font-variant-numeric: tabular-nums; }
+    .energy-card .big small { font-size: 13px; letter-spacing: 0; color: var(--ink-soft); }
+    .energy-card .fine { color: #475569; font-size: 10px; }
+    .progress-wrap { margin-top: 15px; }
+    .progress-label { display: flex; justify-content: space-between; gap: 10px; color: var(--petro-blue); font-size: 9px; font-weight: 700; margin-bottom: 5px; }
+    .progress-track { height: 7px; border-radius: 100px; background: rgba(2,132,199,.16); overflow: hidden; }
+    .progress-fill { height: 100%; width: 0%; border-radius: inherit; background: var(--accent-teal); transition: width .25s ease; }
+    .metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 11px; }
+    .metric { min-height: 88px; background: var(--white); border: 1px solid var(--line); border-radius: 13px; padding: 13px 15px; }
+    .metric .metric-label { color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .metric .metric-value { color: var(--ink); font-size: 20px; letter-spacing: -.04em; font-weight: 740; margin-top: 6px; font-variant-numeric: tabular-nums; }
+    .metric .metric-value small { font-size: 10px; color: var(--ink-soft); font-weight: 650; letter-spacing: 0; }
+    .metric .metric-foot { margin-top: 2px; color: var(--text-muted); font-size: 9px; line-height: 1.3; }
+    .card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); box-shadow: var(--shadow); overflow: hidden; }
+    .card-content { padding: 18px 20px 20px; }
+    .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+    .card-head h2 { margin: 0; font-size: 15px; letter-spacing: -.025em; color: var(--primary-navy); }
+    .card-head p { color: var(--muted); font-size: 10px; margin: 4px 0 0; }
+    .tag { flex: 0 0 auto; border-radius: 999px; padding: 5px 8px; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; background: #f1f5f9; color: var(--ink-soft); }
+    .tag.green { background: #ccfbf1; color: var(--accent-teal-hover); }
+    .tag.amber { background: var(--amber-pale); color: #92400e; }
+    .chart-wrap { width: 100%; overflow: hidden; border-radius: 8px; background: linear-gradient(180deg, #ffffff, #f8fafc); border: 1px solid var(--line); padding: 7px 8px 3px; }
+    #curveChart { display: block; width: 100%; height: auto; min-height: 180px; }
+    .chart-note { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 9px; margin-top: 8px; }
+    .chart-legend { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-soft); font-weight: 650; }
+    .legend-line { width: 16px; height: 3px; border-radius: 2px; background: var(--accent-teal); }
+    .legend-marker { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-gold); }
+    .wake-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .wake-card { background: #f8fafc; border: 1px solid var(--line); border-radius: 9px; padding: 12px; min-width: 0; }
+    .wake-card .kicker { color: var(--muted); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; }
+    .wake-card .wake-distance { margin-top: 6px; font-size: 18px; font-weight: 750; letter-spacing: -.04em; }
+    .wake-card .wake-lines { margin-top: 7px; display: grid; gap: 3px; color: var(--ink-soft); font-size: 10px; }
+    .wake-card .wake-lines b { color: var(--ink); font-variant-numeric: tabular-nums; }
+    .wake-alert { display: none; margin-top: 11px; padding: 9px 11px; border-radius: 8px; background: var(--amber-pale); color: #92400e; font-size: 10px; }
+    .wake-note { margin: 11px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .context-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .context-item { padding: 11px; background: #f8fafc; border: 1px solid var(--line); border-radius: 8px; }
+    .context-item strong { display: block; font-size: 10px; margin-bottom: 4px; color: var(--primary-navy); }
+    .context-item span { color: var(--accent-teal-hover); font-size: 12px; font-weight: 800; }
+    .context-item small { display: block; margin-top: 3px; color: var(--muted); font-size: 9px; line-height: 1.35; }
+    .context-foot { color: var(--muted); font-size: 10px; margin: 11px 0 0; }
+    .audit-box { margin-top: 13px; padding: 11px 12px; border-radius: 8px; background: #f0f9ff; border: 1px solid #bae6fd; color: var(--petro-blue); font-size: 10px; line-height: 1.5; }
+    .audit-box strong { color: var(--primary-navy); }
+    details.sources { border-top: 1px solid var(--line); }
+    details.sources summary { padding: 14px 20px; cursor: pointer; color: var(--ink-soft); font-size: 11px; font-weight: 750; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
+    details.sources summary::-webkit-details-marker { display: none; }
+    details.sources summary::after { content: "+"; color: var(--teal); font-size: 16px; line-height: 1; }
+    details.sources[open] summary::after { content: "−"; }
+    .source-list { padding: 0 20px 18px; margin: 0; list-style: none; display: grid; gap: 10px; }
+    .source-list li { display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 12px; border-top: 1px solid #edf1ee; padding-top: 10px; }
+    .source-list strong { display: block; font-size: 10px; color: var(--ink); }
+    .source-list span { display: block; color: var(--muted); font-size: 9px; margin-top: 3px; line-height: 1.4; }
+    .source-list a { color: var(--teal); font-size: 10px; font-weight: 800; text-decoration: none; white-space: nowrap; }
+    .source-list a:hover { text-decoration: underline; }
+    .guide-shortcut { width: 100%; display: flex; align-items: center; gap: 9px; margin: 0 0 14px; padding: 9px 10px; border: 1px solid #bae6fd; border-radius: 8px; background: #f0f9ff; color: var(--petro-blue); text-align: left; font-size: 10px; }
+    .guide-question { width: 22px; height: 22px; flex: 0 0 22px; display: grid; place-items: center; border-radius: 50%; background: var(--accent-cyan); color: #fff; font-weight: 850; }
+    .guide-shortcut > span:nth-child(2) { flex: 1; }
+    .guide-shortcut strong { display: block; color: var(--primary-navy); }
+    .guide-arrow { color: var(--accent-cyan); font-size: 15px; font-weight: 850; }
+    details.parameter-guide { border-top: 1px solid var(--line); }
+    details.parameter-guide summary { padding: 14px 20px; cursor: pointer; color: var(--primary-navy); font-size: 11px; font-weight: 800; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
+    details.parameter-guide summary::-webkit-details-marker { display: none; }
+    details.parameter-guide summary::after { content: "+"; color: var(--accent-cyan); font-size: 17px; line-height: 1; }
+    details.parameter-guide[open] summary::after { content: "−"; }
+    .guide-content { padding: 0 18px 18px; }
+    .guide-intro { margin: 0 0 11px; padding: 10px 11px; border-radius: 8px; background: #f0f9ff; color: var(--petro-blue); font-size: 10px; line-height: 1.45; }
+    .guide-intro strong { color: var(--primary-navy); }
+    .guide-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .guide-group { min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; }
+    .guide-group h3 { margin: 0 0 9px; color: var(--primary-navy); font-size: 11px; }
+    .guide-list { margin: 0; display: grid; gap: 8px; }
+    .guide-list div + div { border-top: 1px solid var(--line); padding-top: 7px; }
+    .guide-list dt { color: var(--petro-blue); font-size: 10px; font-weight: 800; }
+    .guide-list dd { margin: 2px 0 0; color: var(--muted); font-size: 9px; line-height: 1.45; }
+    .footer {  display: flex; justify-content: space-between; gap: 18px; padding: 20px 1px 30px; color: var(--muted); font-size: 10px; }
+    .footer strong { color: var(--ink-soft); }
+    .toast { position: fixed; z-index: 60; left: 50%; bottom: 22px; transform: translate(-50%, 16px); opacity: 0; pointer-events: none; background: var(--primary-navy); color: white; padding: 10px 14px; border-radius: 8px; font-size: 11px; box-shadow: 0 10px 30px rgba(13,35,58,.25); transition: .2s ease; max-width: calc(100% - 32px); }
+    .toast.show { transform: translate(-50%, 0); opacity: 1; }
+    .sr-only { position: absolute; height: 1px; width: 1px; overflow: hidden; clip: rect(1px,1px,1px,1px); white-space: nowrap; }
+    .mobile-dock { display: none; }
+    @media (max-width: 1050px) {
+      .layout { grid-template-columns: minmax(280px, 330px) minmax(0, 1fr); }
+      .results-top { grid-template-columns: 1fr; }
+      .power-card, .energy-card { min-height: 160px; }
+    }
+    @media (max-width: 760px) {
+      body { padding-bottom: 94px; }
+      .page { width: calc(100% - 20px); }
+      .topbar { height: 58px; padding: 0 12px; border-radius: 0 0 10px 10px; }
+      .top-meta { font-size: 9px; gap: 6px; }
+      .brand { font-size: 10px; gap: 8px; }
+      .eprom-badge { min-width: 52px; height: 31px; font-size: 11px; }
+      .brand small { font-size: 7px; }
+      .hero { display: block; padding: 18px 18px 20px; margin: 12px 0; border-radius: 13px; }
+      h1 { font-size: clamp(31px, 9vw, 42px); margin: 7px 0 8px; }
+      .hero-copy { font-size: 12px; line-height: 1.45; }
+      .version-card { display: none; }
+      .notice { margin-bottom: 12px; padding: 10px 11px; gap: 8px; font-size: 10px; }
+      .notice-icon { width: 20px; height: 20px; flex-basis: 20px; font-size: 11px; }
+      .toolbar { gap: 6px; margin-bottom: 12px; }
+      .button { min-height: 40px; padding: 8px 10px; font-size: 10px; border-radius: 8px; }
+      .toolbar #printButton { display: none; }
+      .toolbar-status { width: 100%; margin: 0; font-size: 9px; }
+      .layout { display: grid; grid-template-columns: 1fr; gap: 13px; }
+      .input-panel { position: static; max-height: none; overflow: visible; }
+      .panel-head { min-height: 40px; padding: 10px 13px; }
+      .panel-body { padding: 13px; }
+      .steps-hint { padding: 9px; margin-bottom: 12px; gap: 6px; }
+      .steps-hint strong { font-size: 9px; }
+      .steps-hint small { font-size: 8px; }
+      .field label, .field .field-label { font-size: 11px; margin-bottom: 4px; }
+      input[type="number"], select { min-height: 46px; padding: 10px; border-radius: 8px; font-size: 16px; }
+      .field-help, .form-caution { font-size: 10px; }
+      .form-caution { padding: 8px 9px; }
+      .results-column { gap: 12px; }
+      .results-top { grid-template-columns: 1fr; gap: 10px; }
+      .power-card { min-height: 145px; padding: 18px; }
+      .power-card .value { font-size: 48px; margin: 18px 0 8px; }
+      .power-card .sub { font-size: 10px; }
+      .status-pill { top: 15px; right: 15px; }
+      .energy-card { min-height: 145px; padding: 16px; }
+      .energy-card .big { font-size: 29px; margin-top: 8px; }
+      .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .metric { min-height: 78px; padding: 10px; border-radius: 10px; }
+      .metric .metric-label { font-size: 8px; letter-spacing: .07em; }
+      .metric .metric-value { font-size: 18px; }
+      .metric .metric-foot { font-size: 8px; }
+      .card-content { padding: 14px; }
+      .card-head { gap: 8px; }
+      .card-head h2 { font-size: 14px; }
+      .card-head p { font-size: 9px; }
+      .chart-wrap { padding: 4px; }
+      #curveChart { min-height: 150px; }
+      .chart-note { display: block; font-size: 8px; }
+      .chart-note > span { display: flex; margin-top: 4px; }
+      .wake-grid { grid-template-columns: 1fr; gap: 7px; }
+      .wake-card { padding: 10px; }
+      .wake-card .wake-distance { font-size: 16px; }
+      .wake-card .wake-lines { grid-template-columns: 1fr 1fr; gap: 4px 8px; font-size: 9px; }
+      .wake-card .wake-lines span:last-child { grid-column: 1 / -1; }
+      .context-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+      .context-item { padding: 9px; }
+      .context-item strong { font-size: 9px; }
+      .context-item small { font-size: 8px; }
+      .context-foot, .wake-note { font-size: 9px; }
+      .source-list { padding: 0 14px 14px; }
+      .source-list li { grid-template-columns: 1fr; gap: 5px; }
+      .source-list a { justify-self: start; }
+      .guide-grid { grid-template-columns: 1fr; }
+      .guide-content { padding: 0 12px 14px; }
+      .guide-list dt { font-size: 11px; }
+      .guide-list dd { font-size: 10px; }
+      .footer { display: block; padding: 14px 2px 22px; }
+      .footer > * + * { margin-top: 6px; }
+      .mobile-dock { display: flex; position: fixed; left: 10px; right: 10px; bottom: max(10px, env(safe-area-inset-bottom)); z-index: 50; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 11px; border: 1px solid rgba(255,255,255,.12); border-radius: 12px; background: var(--primary-navy); color: #ffffff; box-shadow: 0 8px 24px rgba(13,35,58,.25); }
+      .mobile-dock > div { min-width: 0; }
+      .dock-label { display: block; color: #94a3b8; font-size: 8px; font-weight: 800; letter-spacing: .08em; }
+      .mobile-dock strong { display: flex; align-items: baseline; gap: 4px; color: #2dd4bf; font-size: 20px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+      .mobile-dock strong small { color: #cbd5e1; font-size: 10px; }
+      .dock-button { min-height: 38px; border: 0; border-radius: 8px; padding: 0 12px; background: var(--accent-teal); color: #ffffff; font-size: 10px; font-weight: 800; white-space: nowrap; }
+      .dock-button:hover { background: var(--accent-teal-hover); }
+      .toast { bottom: 82px; }
+    }
+    @media (max-width: 430px) {
+      .top-meta { font-size: 8px; }
+      .top-meta .top-dot { display: none; }
+      .hero-copy { font-size: 11px; }
+      .steps-hint { gap: 5px; }
+      .step-arrow { padding: 0; }
+      .field-grid { gap: 9px 8px; }
+      .power-card .value { font-size: 44px; }
+      .wake-card .wake-lines { grid-template-columns: 1fr; }
+      .wake-card .wake-lines span:last-child { grid-column: auto; }
+    }
+    @media print {
+      body { background: white; }
+      .page { width: 100%; }
+      .topbar { height: 52px; }
+      .toolbar, .input-panel, .toast, .mobile-dock { display: none !important; }
+      .hero { padding: 22px 0 14px; }
+      .layout { display: block; }
+      .results-column { display: grid; gap: 10px; }
+      .results-top { grid-template-columns: 1.1fr .9fr; }
+      .card, .power-card { box-shadow: none; break-inside: avoid; }
+      .context-section { break-inside: avoid; }
+      details.sources:not([open]) > *:not(summary) { display: block; }
+      details.sources { break-before: page; }
+      a { color: inherit; }
+    }
+  
+    /* Clarity and touch-friendly refinements for the beginner-first layout */
+    .steps-hint {
+      display: block; padding: 13px 14px; margin-bottom: 13px; border: 1px solid #bae6fd;
+      border-radius: 11px; background: #f0f9ff; color: var(--ink-soft);
+    }
+    .steps-hint > strong { display: block; color: var(--primary-navy); font-size: 13px; }
+    .steps-hint ol { margin: 7px 0 0; padding-left: 19px; color: var(--ink-soft); font-size: 11px; line-height: 1.5; }
+    .steps-hint li + li { margin-top: 3px; }
+    .step-number, .step-arrow { display: none; }
+    .sample-note { margin: 0 0 11px; padding: 9px 10px; border-left: 3px solid var(--accent-gold); border-radius: 2px 8px 8px 2px; background: #fff7ed; color: #7c2d12; font-size: 11px; line-height: 1.45; }
+    .form-section h2, .subsection-title { font-size: 15px; }
+    .field label, .field .field-label { font-size: 12px; }
+    .field-help { font-size: 11px; line-height: 1.45; }
+    .unit { font-size: 10px; }
+    .guide-shortcut { min-height: 48px; font-size: 12px; }
+    .button { min-height: 42px; }
+    .comparison-callout { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 13px 0 2px; padding: 12px; border: 1px solid #bae6fd; border-radius: 10px; background: #f0f9ff; }
+    .comparison-callout strong { display: block; color: var(--primary-navy); font-size: 12px; }
+    .comparison-callout p { margin: 4px 0 0; color: var(--ink-soft); font-size: 10px; line-height: 1.45; }
+    .comparison-callout .button { flex: 0 0 auto; }
+    .results-heading { display: flex; align-items: flex-start; gap: 11px; margin: 0 0 -3px; }
+    .result-step { width: 29px; height: 29px; flex: 0 0 29px; display: grid; place-items: center; border-radius: 50%; background: var(--accent-teal); color: #fff; font-size: 13px; font-weight: 850; }
+    .results-heading h2 { margin: 0; color: var(--primary-navy); font-size: 19px; letter-spacing: -.03em; }
+    .results-heading p { margin: 3px 0 0; color: var(--muted); font-size: 11px; }
+    .power-card .label, .energy-card .label { font-size: 11px; }
+    .power-card .sub, .energy-card .fine { font-size: 12px; line-height: 1.45; }
+    .energy-card .progress-label { font-size: 11px; }
+    .energy-card .big { font-size: 34px; }
+    .technical-details, .reference-details { width: 100%; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); box-shadow: var(--shadow); overflow: hidden; }
+    .technical-details > summary, .reference-details > summary {
+      min-height: 62px; padding: 13px 17px; display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; cursor: pointer; list-style: none; background: #fff;
+    }
+    .technical-details > summary::-webkit-details-marker, .reference-details > summary::-webkit-details-marker { display: none; }
+    .technical-details > summary strong, .reference-details > summary strong { display: block; color: var(--primary-navy); font-size: 13px; }
+    .technical-details > summary small, .reference-details > summary small { display: block; color: var(--muted); font-size: 11px; line-height: 1.4; margin-top: 3px; }
+    .technical-details[open] > summary, .reference-details[open] > summary { border-bottom: 1px solid var(--line); }
+    .technical-details[open] .details-plus, .reference-details[open] .details-plus { transform: rotate(45deg); }
+    .technical-body { display: grid; gap: 14px; padding: 14px; }
+    .technical-body .card { box-shadow: none; }
+    .reference-details > .context-section { border: 0; border-radius: 0; box-shadow: none; }
+    .reference-details > .context-section > .card-content { padding-top: 16px; }
+    .mobile-dock { min-height: 58px; }
+    .dock-button { min-height: 42px; font-size: 12px; }
+    @media (max-width: 760px) {
+      .steps-hint { padding: 12px; }
+      .steps-hint > strong { font-size: 13px; }
+      .steps-hint ol { font-size: 12px; }
+      .field label, .field .field-label { font-size: 13px; }
+      .field-help { font-size: 12px; }
+      .sample-note { font-size: 12px; }
+      .results-heading h2 { font-size: 18px; }
+      .results-heading p { font-size: 11px; }
+      .comparison-callout { align-items: stretch; flex-direction: column; }
+      .comparison-callout .button { width: 100%; justify-content: center; }
+      .technical-details > summary, .reference-details > summary { min-height: 68px; padding: 13px; }
+      .technical-body { padding: 10px; }
+      .energy-card .big { font-size: 32px; }
+    }
+    @media (max-width: 430px) {
+      .quick-form .field-grid, .advanced-body .field-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .quick-form .field-help { max-width: 52ch; }
+      .toolbar { display: grid; grid-template-columns: 1fr 1fr; }
+      .toolbar #resetButton { grid-column: 1 / -1; }
+      .toolbar-status { grid-column: 1 / -1; }
+      .button { justify-content: center; }
+      .result-step { width: 27px; height: 27px; flex-basis: 27px; }
+    }
+    @media print {
+      details.technical-details:not([open]) > .technical-body { display: grid !important; }
+      details.reference-details:not([open]) > .context-section { display: block !important; }
+      details.technical-details > summary, details.reference-details > summary { display: none !important; }
+      details.parameter-guide:not([open]) > *:not(summary) { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <span class="eprom-badge">EPROM</span>
+        <span>WIND PERFORMANCE<small>QUICK SCREENING TOOL</small></span>
+      </div>
+      <div class="top-meta"><span class="top-dot"></span> Wind calculator <span aria-hidden="true">·</span> V1.2</div>
+    </header>
+
+    <section class="hero">
+      <div class="hero-inner">
+        <div class="eyebrow">EPROM · WIND PERFORMANCE</div>
+        <h1>Quick wind<br><span>turbine estimate.</span></h1>
+        <p class="hero-copy">Enter a few turbine and site details. See estimated power and yearly energy straight away; open more settings only if you need them.</p>
+      </div>
+      <div class="version-card"><strong>SCREENING TOOL</strong>Phone-friendly · updates live<br>Works offline in this file</div>
+    </section>
+
+    <div class="notice" role="note">
+      <span class="notice-icon">i</span>
+      <div><strong>Early screening only.</strong> For design or financing decisions, use a certified turbine power curve and measured site wind data.</div>
+    </div>
+
+    <div class="toolbar" aria-label="Calculator actions">
+      <button class="button primary" id="resetButton" type="button">Restore example values</button>
+      <button class="button secondary" id="csvButton" type="button">Download results (CSV)</button>
+      <button class="button ghost" id="printButton" type="button">Print / save PDF</button>
+      <span class="toolbar-status" id="updatedStatus">Results update automatically as you edit</span>
+    </div>
+
+    <div class="layout">
+      <aside class="panel input-panel" aria-labelledby="inputsTitle">
+        <div class="panel-head"><span id="inputsTitle">Step 1 / Enter your details</span><span class="right-note">UPDATES LIVE</span></div>
+        <div class="panel-body">
+          <div class="error-box" id="errorBox" role="alert"></div>
+          <div class="steps-hint" aria-label="Quick start">
+            <strong>How to use this calculator</strong>
+            <ol>
+              <li>Replace the sample values with details from your turbine datasheet.</li>
+              <li>Enter a long-term average wind speed. Your estimate updates as you type.</li>
+            </ol>
+          </div>
+          <button class="guide-shortcut" id="openGuideButton" type="button"><span class="guide-question">?</span><span>Need help? <strong>Open the beginner guide</strong></span><span class="guide-arrow">↘</span></button>
+
+          <section class="form-section quick-form">
+            <div class="section-inline"><h2>Your turbine & site</h2><span class="hint-chip">START HERE</span></div>
+            <p class="sample-note"><strong>Example numbers are loaded.</strong> Replace them with details from your turbine datasheet and a long-term wind measurement.</p>
+            <div class="field-grid">
+              <div class="field full">
+                <label for="turbineType">Turbine type</label>
+                <select id="turbineType">
+                  <option value="VAWT" selected>Vertical axis · VAWT</option>
+                  <option value="HAWT">Horizontal axis · HAWT</option>
+                </select>
+                <div class="field-help">HAWT blades face like a propeller; VAWT blades spin around an upright shaft.</div>
+              </div>
+              <div class="field">
+                <label for="ratedPower">Rated power <span class="unit">kW</span></label>
+                <input id="ratedPower" type="number" min="0.01" step="0.1" value="1" inputmode="decimal">
+                <div class="field-help">The turbine’s maximum output shown on its nameplate—not its usual output.</div>
+              </div>
+              <div class="field">
+                <label for="diameter">Rotor diameter <span class="unit">m</span></label>
+                <input id="diameter" type="number" min="0.01" step="0.01" value="1.2" inputmode="decimal">
+                <div class="field-help">Width of the blades’ swept area; use the rotor width for a VAWT.</div>
+              </div>
+              <div class="field" id="heightField">
+                <label for="rotorHeight">Rotor height <span class="unit">m</span></label>
+                <input id="rotorHeight" type="number" min="0.01" step="0.01" value="2" inputmode="decimal">
+                <div class="field-help">Height of the spinning rotor; needed for VAWT area.</div>
+              </div>
+              <div class="field">
+                <label for="windSpeed">Average wind speed <span class="unit">m/s</span></label>
+                <input id="windSpeed" type="number" min="0" step="0.1" value="9" inputmode="decimal">
+                <div class="field-help">Use a long-term average (ideally 12 months), measured at rotor height—not a gust. For a different measurement height, use the optional height adjustment below.</div>
+              </div>
+              <div class="field full">
+                <label for="sitePreset">Egypt site reference <span class="unit">optional</span></label>
+                <select id="sitePreset">
+                  <option value="gulf" selected>Gulf of Suez · example 35%</option>
+                  <option value="secondary">Other Egyptian sites · example 22.5%</option>
+                  <option value="custom">Enter my own estimate</option>
+                </select>
+                <div class="field-help">A rough regional starting point for yearly energy—not a measurement of your location.</div>
+              </div>
+              <div class="field full">
+                <label for="siteCF">Expected average output <span class="unit">capacity factor, %</span></label>
+                <input id="siteCF" type="number" min="0" max="100" step="0.5" value="35" inputmode="decimal">
+                <div class="field-help">The estimated share of rated power averaged over a year. At 35%, a 1 kW turbine averages about 0.35 kW. This changes yearly energy, not power at the entered wind speed.</div>
+              </div>
+            </div>
+            <div class="form-caution" id="geometryHelp">Rotor size affects how much wind is available to the blades. Dimensions are used to estimate the swept area.</div>
+          </section>
+
+          <details class="advanced-settings" id="advancedSettings">
+            <summary><span><strong>More settings (optional)</strong><small>Height correction, turbine assumptions, yearly target & spacing</small></span><span class="details-plus" aria-hidden="true">+</span></summary>
+            <div class="advanced-body">
+              <div class="comparison-callout">
+                <div><strong>Compare with the source spreadsheet</strong><p>Loads the original workbook case, including Cp = 0.593 (theoretical maximum) and its older wake formula. Use this only to match the spreadsheet—not as typical turbine settings.</p></div>
+                <button class="button secondary" id="loadExample" type="button">Load spreadsheet case</button>
+              </div>
+              <section class="form-section">
+                <div class="section-inline"><h2>Height & wind adjustment</h2><span class="helper">Optional</span></div>
+                <div class="field-grid">
+                  <div class="field">
+                    <label for="hubHeight">Hub height <span class="unit">m</span></label>
+                    <input id="hubHeight" type="number" min="0.1" step="0.1" value="6" inputmode="decimal">
+                    <div class="field-help">Height of the rotor’s center above the ground.</div>
+                  </div>
+                  <div class="field">
+                    <label for="density">Air density <span class="unit">kg/m³</span></label>
+                    <input id="density" type="number" min="0.1" step="0.001" value="1.225" inputmode="decimal">
+                    <div class="field-help">How dense the air is. Keep 1.225 if you do not know.</div>
+                  </div>
+                </div>
+                <label class="switch-line" for="adjustHeight">
+                  <input id="adjustHeight" type="checkbox">
+                  <span>Adjust wind to hub height<small>Leave off if your wind speed is already measured at the turbine height.</small></span>
+                </label>
+                <div class="height-fields" id="heightFields">
+                  <div class="field-grid">
+                    <div class="field">
+                      <label for="referenceHeight">Wind measurement height <span class="unit">m</span></label>
+                      <input id="referenceHeight" type="number" min="0.1" step="0.1" value="6" inputmode="decimal">
+                      <div class="field-help">Height where the wind speed was measured.</div>
+                    </div>
+                    <div class="field">
+                      <label for="shearExponent">Shear exponent, α</label>
+                      <input id="shearExponent" type="number" min="0" max="1" step="0.01" value="0.14" inputmode="decimal">
+                      <div class="field-help">How much wind usually changes as height changes.</div>
+                    </div>
+                  </div>
+                  <div class="field-help">Uses Vhub = Vmeasurement × (hub / measurement height)<sup>α</sup>. α depends on site conditions; 0.14 is a screening default.</div>
+                </div>
+              </section>
+
+              <section class="form-section">
+                <div class="section-inline"><h2>Performance assumptions</h2><span class="helper">Use the datasheet if available</span></div>
+                <div class="field-grid">
+                  <div class="field">
+                    <label for="cp">Power coefficient, Cp</label>
+                    <input id="cp" type="number" min="0.001" max="0.593" step="0.01" value="0.30" inputmode="decimal">
+                    <div class="field-help" id="cpHelp">Share of wind power the blades capture; 0.30 is a rough VAWT example.</div>
+                  </div>
+                  <div class="field">
+                    <label for="efficiency">System efficiency <span class="unit">%</span></label>
+                    <input id="efficiency" type="number" min="1" max="100" step="1" value="75" inputmode="decimal">
+                    <div class="field-help">Share of rotor power that reaches the electrical output.</div>
+                  </div>
+                  <div class="field">
+                    <label for="cutIn">Cut-in speed <span class="unit">m/s</span></label>
+                    <input id="cutIn" type="number" min="0" step="0.1" value="3.5" inputmode="decimal">
+                    <div class="field-help">Below this wind speed, this estimate gives zero output.</div>
+                  </div>
+                  <div class="field">
+                    <label for="cutOut">Cut-out speed <span class="unit">m/s</span></label>
+                    <input id="cutOut" type="number" min="0" step="0.1" placeholder="Not set" inputmode="decimal">
+                    <div class="field-help">Optional safety shutdown speed from the datasheet.</div>
+                  </div>
+                </div>
+                <div class="form-caution"><strong>Tip:</strong> the workbook used Cp = 0.593, the Betz theoretical maximum. The quick estimate starts at 0.30 for VAWT; replace it with a turbine-specific value when you have one.</div>
+              </section>
+
+              <section class="form-section">
+                <div class="section-inline"><h2>Energy target</h2><span class="helper">Optional</span></div>
+                <div class="field-grid">
+                  <div class="field full">
+                    <label for="targetEnergy">Yearly energy target <span class="unit">optional · MWh/year</span></label>
+                    <input id="targetEnergy" type="number" min="0" step="0.1" value="0" inputmode="decimal">
+                  </div>
+                </div>
+                <div class="field-help">Your desired yearly electricity total. This is only compared with the estimate.</div>
+              </section>
+
+              <section class="form-section">
+                <div class="section-inline"><h2>Wake & spacing</h2><span class="helper">Optional screen</span></div>
+                <div class="field-grid">
+                  <div class="field">
+                    <label for="spacing">Turbine spacing <span class="unit">m</span></label>
+                    <input id="spacing" type="number" min="0" step="0.1" value="10" inputmode="decimal">
+                    <div class="field-help">Downwind gap from one turbine to the next.</div>
+                  </div>
+                  <div class="field">
+                    <label for="minMultiplier">Minimum spacing <span class="unit">× D</span></label>
+                    <input id="minMultiplier" type="number" min="1" step="0.5" value="5" inputmode="decimal">
+                    <div class="field-help">A simple rule based on rotor widths. 5D means five rotor diameters.</div>
+                  </div>
+                  <div class="field">
+                    <label for="thrust">Thrust coefficient, Ct</label>
+                    <input id="thrust" type="number" min="0" max="0.99" step="0.01" value="0.85" inputmode="decimal">
+                    <div class="field-help">How strongly a turbine slows the wind; used in the wake estimate.</div>
+                  </div>
+                  <div class="field">
+                    <label for="wakeDecay">Wake decay, κ</label>
+                    <input id="wakeDecay" type="number" min="0" step="0.005" value="0.04" inputmode="decimal">
+                    <div class="field-help">How quickly the slowed wind recovers farther downstream.</div>
+                  </div>
+                  <div class="field full">
+                    <label for="wakeModel">Wake formula</label>
+                    <select id="wakeModel">
+                      <option value="standard" selected>Standard Jensen (recommended)</option>
+                      <option value="legacy">Workbook compatibility</option>
+                    </select>
+                    <span class="select-note">This estimates how the first turbine slows wind reaching the next. Use Standard Jensen unless matching the old workbook.</span>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </details>
+        </div>
+      </aside>
+
+      <main class="results-column" aria-label="Calculated results">
+        <div class="results-heading">
+          <span class="result-step" aria-hidden="true">2</span>
+          <div><h2>Step 2 · Your estimate</h2><p>These two headline results update as you change the inputs.</p></div>
+        </div>
+        <div class="results-top">
+          <section class="power-card" id="powerCard" aria-labelledby="powerTitle">
+            <div class="status-pill" id="powerStatus">Model estimate</div>
+            <div class="label" id="powerTitle">Estimated electrical power</div>
+            <div class="value"><span id="powerValue">0.24</span><span>kW</span></div>
+            <div class="sub" id="powerSubtitle">At the entered average wind speed at rotor height</div>
+          </section>
+          <section class="energy-card" aria-labelledby="aepTitle">
+            <div class="energy-head">
+              <div>
+                <div class="label" id="aepTitle">Estimated electricity per year</div>
+                <div class="big"><span id="aepValue">3.07</span> <small>MWh / year</small></div>
+                <div class="fine" id="aepFine">Uses rated power and the selected yearly output assumption</div>
+              </div>
+              <span class="tag green" id="aepTag">Yearly estimate</span>
+            </div>
+            <div class="progress-wrap">
+              <div class="progress-label"><span id="targetProgressLabel">Optional target comparison</span><span id="targetCoverage">Not set</span></div>
+              <div class="progress-track" id="targetTrack" aria-label="Annual energy target coverage"><div class="progress-fill" id="targetProgress"></div></div>
+            </div>
+          </section>
+        </div>
+
+        <details class="technical-details" id="technicalDetails">
+          <summary><span><strong>More results & checks (optional)</strong><small>Rotor details, power curve and turbine-spacing check</small></span><span class="details-plus" aria-hidden="true">+</span></summary>
+          <div class="technical-body">
+        <div class="metric-grid" aria-label="Key performance indicators">
+          <div class="metric"><div class="metric-label">Swept area</div><div class="metric-value"><span id="areaValue">2.40</span> <small>m²</small></div><div class="metric-foot" id="areaFoot">VAWT H-rotor approximation</div></div>
+          <div class="metric"><div class="metric-label">Power in wind</div><div class="metric-value"><span id="windPowerValue">1.07</span> <small>kW</small></div><div class="metric-foot">Available kinetic power before Cp</div></div>
+          <div class="metric"><div class="metric-label">Rotor mechanical power</div><div class="metric-value"><span id="rotorPowerValue">0.32</span> <small>kW</small></div><div class="metric-foot">Power in wind × Cp</div></div>
+          <div class="metric"><div class="metric-label">Equivalent rated speed</div><div class="metric-value"><span id="equivalentSpeed">14.45</span> <small>m/s</small></div><div class="metric-foot">Model-derived; not the official rated speed</div></div>
+          <div class="metric"><div class="metric-label">Target CF required</div><div class="metric-value"><span id="requiredCF">68.5</span> <small>%</small></div><div class="metric-foot">To meet the entered annual energy target</div></div>
+          <div class="metric"><div class="metric-label">Flat-speed annualization</div><div class="metric-value"><span id="flatEnergy">2.11</span> <small>MWh/y</small></div><div class="metric-foot">Assumes the entered wind speed all year; not AEP</div></div>
+        </div>
+
+        <section class="card" aria-labelledby="curveTitle">
+          <div class="card-content">
+            <div class="card-head">
+              <div><h2 id="curveTitle">Simplified power curve</h2><p>Constant Cp, cut-in threshold and rated-power cap. The gold marker is the entered wind speed.</p></div>
+              <span class="tag">Screening curve</span>
+            </div>
+            <div class="chart-wrap">
+              <svg id="curveChart" viewBox="0 0 560 240" role="img" aria-label="Illustrative turbine power curve"></svg>
+            </div>
+            <div class="chart-note"><span class="chart-legend"><i class="legend-line"></i>Model output <i class="legend-marker" style="margin-left:8px"></i>Selected wind</span><span id="curveFoot">Not a manufacturer's certified power curve</span></div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="wakeTitle">
+          <div class="panel-head"><span id="wakeTitle">02 / Downstream wake screen</span><span class="right-note" id="wakeModelTag">Jensen model</span></div>
+          <div class="card-content">
+            <div class="card-head">
+              <div><h2>How spacing changes the next turbine's wind</h2><p>Centerline, fully aligned, single-turbine wake approximation.</p></div>
+              <span class="tag amber" id="spacingStatus">Check spacing</span>
+            </div>
+            <div class="wake-grid">
+              <div class="wake-card">
+                <div class="kicker">Minimum distance</div>
+                <div class="wake-distance" id="minDistanceValue">6.0 m</div>
+                <div class="wake-lines"><span>Wind after wake <b id="minWakeWind">6.19 m/s</b></span><span>Downstream output <b id="minWakePower">0.08 kW</b></span><span>Point-power loss <b id="minWakeLoss">67.9%</b></span></div>
+              </div>
+              <div class="wake-card">
+                <div class="kicker">Given spacing</div>
+                <div class="wake-distance" id="givenDistanceValue">10.0 m</div>
+                <div class="wake-lines"><span>Wind after wake <b id="givenWakeWind">7.02 m/s</b></span><span>Downstream output <b id="givenWakePower">0.14 kW</b></span><span>Point-power loss <b id="givenWakeLoss">43.2%</b></span></div>
+              </div>
+              <div class="wake-card">
+                <div class="kicker">Spacing rule of thumb</div>
+                <div class="wake-distance" id="spacingRuleValue">5 × D</div>
+                <div class="wake-lines"><span>Rotor diameter <b id="wakeDiameter">1.20 m</b></span><span>Source guidance <b>3–5D typical</b></span><span>Hub height <b id="wakeHubHeight">6.0 m</b></span></div>
+              </div>
+            </div>
+            <div class="wake-alert" id="wakeAlert"></div>
+            <p class="wake-note" id="wakeNote">Jensen wake estimate with Ct = 0.85 and κ = 0.04. Real wake loss depends on terrain, turbulence, array direction, partial rotor overlap and turbine control; do not use this single-row result for a layout design.</p>
+          </div>
+        </section>
+
+          </div>
+        </details>
+
+        <details class="reference-details" id="referenceDetails">
+          <summary><span><strong>Reference & beginner help (optional)</strong><small>Egypt wind context, plain-language guide and source documents</small></span><span class="details-plus" aria-hidden="true">+</span></summary>
+        <section class="card context-section" aria-labelledby="egyptTitle">
+          <div class="card-content">
+            <div class="card-head">
+              <div><h2 id="egyptTitle">Egypt wind-resource context</h2><p>Regional screening values collected from the Drive feasibility report; not a substitute for site measurement.</p></div>
+              <span class="tag green">Egypt reference</span>
+            </div>
+            <div class="context-grid">
+              <div class="context-item"><strong>Gulf of Suez</strong><span>9–12 m/s</span><small>Premium resource · report CF range 30–40%</small></div>
+              <div class="context-item"><strong>Red Sea coast</strong><span>8–10 m/s</span><small>Suitable coastal resource in the report</small></div>
+              <div class="context-item"><strong>Western Desert</strong><span>8–10 m/s</span><small>Expanding development zone</small></div>
+              <div class="context-item"><strong>Nile Delta</strong><span>6–7 m/s</span><small>Lower resource; taller hubs may help</small></div>
+            </div>
+            <p class="context-foot">The source report recommends at least 12 months of wind measurement at hub height for project-grade assessment. Secondary Egyptian sites are reported at roughly 20–25% capacity factor.</p>
+            <div class="audit-box" id="workbookAudit"><strong>Data note:</strong> The source workbook labels its annual energy result “MW”; its formula is kW × 8,760 ÷ 1,000, so the unit is <strong>MWh/year</strong>. It also labels energy divided by a target as “capacity factor”; this calculator separates target coverage from actual/site capacity factor.</div>
+          </div>
+          <details class="parameter-guide" id="parameterGuide">
+            <summary>Beginner guide: what each number means</summary>
+            <div class="guide-content">
+              <p class="guide-intro"><strong>Quick unit rule:</strong> kW is the turbine’s power at a moment; MWh/year is the total electricity over a whole year. For wind speed, enter a typical average—not a storm gust.</p>
+              <div class="guide-grid">
+                <section class="guide-group">
+                  <h3>First inputs: turbine & site</h3>
+                  <dl class="guide-list">
+                    <div><dt>Turbine type</dt><dd>HAWT blades turn like a propeller. VAWT blades turn around an upright shaft.</dd></div>
+                    <div><dt>Rated power (kW)</dt><dd>The maximum electrical output printed on the turbine’s nameplate. It is not what the turbine makes all the time.</dd></div>
+                    <div><dt>Rotor diameter (m)</dt><dd>The width of the area swept by the blades; for a VAWT, enter the rotor’s width.</dd></div>
+                    <div><dt>Rotor height (m)</dt><dd>The height of the rotating part of a VAWT. The calculator uses width × height as an approximate wind-catching area.</dd></div>
+                    <div><dt>Average wind speed (m/s)</dt><dd>The usual wind speed at the turbine location and height. A 12-month measurement is much better than a short observation.</dd></div>
+                    <div><dt>Site profile</dt><dd>A rough regional starting point for Egypt. It is not a measurement of your exact site.</dd></div>
+                    <div><dt>Capacity factor (CF, %)</dt><dd>Average yearly output as a share of rated power. At 35%, a 1 kW turbine averages about 0.35 kW over the year.</dd></div>
+                  </dl>
+                </section>
+                <section class="guide-group">
+                  <h3>Advanced: height & power</h3>
+                  <dl class="guide-list">
+                    <div><dt>Hub height (m)</dt><dd>How high the rotor’s center sits above the ground. Wind can be stronger higher up.</dd></div>
+                    <div><dt>Air density (kg/m³)</dt><dd>How much air is packed into a space. Denser air carries more wind energy; keep the standard value if you do not know yours.</dd></div>
+                    <div><dt>Adjust wind to hub height</dt><dd>Turn this on only when your wind reading was taken at a different height from the turbine rotor.</dd></div>
+                    <div><dt>Measurement height (m)</dt><dd>The height where the anemometer or other wind instrument measured the wind.</dd></div>
+                    <div><dt>Shear exponent (α)</dt><dd>A setting for how quickly wind speed changes with height. It depends on the site; the default is only a rough assumption.</dd></div>
+                    <div><dt>Power coefficient (Cp)</dt><dd>The share of wind power the blades capture. It varies by turbine and operating speed; 0.593 is a theoretical upper limit, not a normal default.</dd></div>
+                    <div><dt>System efficiency (%)</dt><dd>The share of rotor power that reaches the electrical output after drivetrain and generator losses.</dd></div>
+                    <div><dt>Cut-in speed (m/s)</dt><dd>The wind speed at which the turbine starts producing power in this estimate.</dd></div>
+                    <div><dt>Cut-out speed (m/s)</dt><dd>An optional high-wind safety shutdown speed from the turbine datasheet. Leave blank if unknown.</dd></div>
+                  </dl>
+                </section>
+                <section class="guide-group">
+                  <h3>Advanced: energy & spacing</h3>
+                  <dl class="guide-list">
+                    <div><dt>Annual energy target (MWh/year)</dt><dd>The amount of electricity you hope to generate in a year. It is used for comparison only.</dd></div>
+                    <div><dt>Turbine spacing (m)</dt><dd>The downwind distance from one turbine to the next. A turbine can slow the wind behind it.</dd></div>
+                    <div><dt>Minimum spacing (× D)</dt><dd>A simple rule of thumb based on rotor diameter D. For example, 5D means five rotor diameters; it is not a final engineering layout rule.</dd></div>
+                    <div><dt>Thrust coefficient (Ct)</dt><dd>A measure of how strongly the rotor slows the wind. It helps estimate the wake behind a turbine.</dd></div>
+                    <div><dt>Wake decay (κ)</dt><dd>How quickly the slowed wind recovers farther behind the turbine. It depends on the site.</dd></div>
+                    <div><dt>Wake formula</dt><dd>Standard Jensen is the recommended screening formula. Workbook compatibility is only for comparing with the older spreadsheet.</dd></div>
+                  </dl>
+                </section>
+                <section class="guide-group">
+                  <h3>What the results mean</h3>
+                  <dl class="guide-list">
+                    <div><dt>Swept area</dt><dd>The space the rotor passes through and takes wind from.</dd></div>
+                    <div><dt>Power in wind</dt><dd>The wind’s theoretical power before the rotor captures any of it.</dd></div>
+                    <div><dt>Rotor mechanical power</dt><dd>The estimated power the blades take from the wind, before electrical losses.</dd></div>
+                    <div><dt>Estimated electrical output</dt><dd>A rough power estimate after efficiency and the rated-power cap. It is not a manufacturer power curve.</dd></div>
+                    <div><dt>Equivalent rated speed</dt><dd>The speed this simplified model needs to reach rated power. It is not the turbine maker’s official rated wind speed.</dd></div>
+                    <div><dt>Site-based annual energy (AEP)</dt><dd>AEP means annual energy production. Here it uses rated power × 8,760 hours × the selected capacity factor.</dd></div>
+                    <div><dt>Target coverage</dt><dd>Site-based annual energy divided by your target. It tells how much of the target the estimate reaches.</dd></div>
+                    <div><dt>Target CF required</dt><dd>The capacity factor needed to meet your target with the chosen rated power.</dd></div>
+                    <div><dt>Flat-speed annualization</dt><dd>What the energy would be if the entered wind speed lasted every hour of the year. Real wind changes, so do not treat this as AEP.</dd></div>
+                    <div><dt>Wake wind / point-power loss</dt><dd>A simplified estimate of wind speed and power behind another turbine. The loss is at that one wind speed—not an annual energy loss.</dd></div>
+                  </dl>
+                </section>
+              </div>
+            </div>
+          </details>
+          <details class="sources">
+            <summary>Drive sources and model assumptions</summary>
+            <ul class="source-list">
+              <li><div><strong>Wind_Turbine_Technical_Report.docx</strong><span>Geometry, wind-power hierarchy, Cp ranges, equivalent rated speed, capacity-factor definition and Jensen wake framework.</span></div><a href="https://docs.google.com/document/d/1FQ4-D8a9MvafQp6T-xwn7WuWApqtMICG/edit" target="_blank" rel="noopener">Open in Drive ↗</a></li>
+              <li><div><strong>Wind Turbine Quick Evaluation V.01.xlsx</strong><span>Workbook example: VAWT D = 1.2 m, H = 2 m, hub = 6 m, rated = 1 kW, wind = 9 m/s, spacing = 10 m, target = 6 MWh/year, ρ = 1.225, η = 75%, Ct = 0.85, κ = 0.04, minimum spacing = 5D. The original assumes Cp = 0.593.</span></div><a href="https://docs.google.com/spreadsheets/d/1ASMuaKqQM2gx7nXKeUW-7JgYgA42STJy/edit" target="_blank" rel="noopener">Open in Drive ↗</a></li>
+              <li><div><strong>Egypt_Small_Community_Wind_Report_2026.docx</strong><span>Regional wind-speed ranges, Gulf of Suez / secondary-site capacity-factor ranges, and the recommendation for long-duration hub-height measurement.</span></div><a href="https://docs.google.com/document/d/1iTJeL9xRCNOK_4N2RPsMihRqYttmAEbg/edit" target="_blank" rel="noopener">Open in Drive ↗</a></li>
+              <li><div><strong>1-5kW_Wind_Turbine_Sourcing_Guide_Egypt.docx</strong><span>Small-turbine sourcing context and the need to verify certification, warranties and supplier power curves.</span></div><a href="https://docs.google.com/document/d/1uQ40cQObhtOkumXU6mklYQnIuSw8ywnM/edit" target="_blank" rel="noopener">Open in Drive ↗</a></li>
+              <li><div><strong>wind turbine.pdf</strong><span>Vendor-listing examples only. Seller specifications are not used as calculator defaults and should be independently verified.</span></div><a href="https://drive.google.com/file/d/1hCEbHgLKVtpJy4asyx42JQgtBbwKbxsj/view" target="_blank" rel="noopener">Open in Drive ↗</a></li>
+              <li><div><strong>EPROM Suppliers Portal.html — palette reference</strong><span>Applied EPROM navy #0d233a, secondary navy #153556, teal #0d9488, cyan #0284c7 and gold #d97706.</span></div><a href="https://drive.google.com/file/d/1a6pbk5amLVRxReO2f_bQ8UDEG8uTzh5R/view?usp=drivesdk" target="_blank" rel="noopener">Open in Drive ↗</a></li>
+            </ul>
+          </details>
+        </section>
+        </details>
+      </main>
+    </div>
+
+    <footer class="footer">
+      <div><strong>Quick estimate only.</strong> Use certified turbine curves, site measurements and engineering review for decisions.</div>
+      <div>All calculations run locally in this file.</div>
+    </footer>
+  </div>
+  <div class="mobile-dock" id="mobileDock" aria-label="Quick result and navigation">
+    <div><span class="dock-label">POWER ESTIMATE</span><strong><span id="dockPower">0.24</span><small>kW</small></strong></div>
+    <button class="dock-button" id="viewResults" type="button">See estimate ↓</button>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      'use strict';
+      const BETZ = 0.593; // rounded display/input limit for 16/27
+      const HOURS_PER_YEAR = 8760;
+      const $ = (id) => document.getElementById(id);
+      const fields = [
+        'turbineType','diameter','rotorHeight','ratedPower','hubHeight','windSpeed','density','cp','efficiency','cutIn','cutOut',
+        'adjustHeight','referenceHeight','shearExponent','sitePreset','siteCF','targetEnergy','spacing','minMultiplier','thrust','wakeDecay','wakeModel'
+      ];
+      let cpEdited = false;
+      let toastTimer;
+      let lastResults = null;
+
+      const num = (id) => {
+        const raw = $(id).value.trim();
+        if (raw === '') return NaN;
+        return Number(raw);
+      };
+      const fmt = (value, decimals = 2) => {
+        if (!Number.isFinite(value)) return '—';
+        const abs = Math.abs(value);
+        const digits = abs >= 1000 ? 0 : abs >= 100 ? 1 : decimals;
+        return value.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+      };
+      const percent = (value, decimals = 1) => Number.isFinite(value) ? `${(value * 100).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}%` : '—';
+      const clamp = (x, low, high) => Math.min(high, Math.max(low, x));
+
+      function showToast(message) {
+        $('toast').textContent = message;
+        $('toast').classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => $('toast').classList.remove('show'), 3100);
+      }
+
+      function setDefaults() {
+        const values = {
+          turbineType: 'VAWT', diameter: '1.2', rotorHeight: '2', ratedPower: '1', hubHeight: '6',
+          windSpeed: '9', density: '1.225', cp: '0.30', efficiency: '75', cutIn: '3.5', cutOut: '',
+          referenceHeight: '6', shearExponent: '0.14', sitePreset: 'gulf', siteCF: '35', targetEnergy: '0',
+          spacing: '10', minMultiplier: '5', thrust: '0.85', wakeDecay: '0.04', wakeModel: 'standard'
+        };
+        Object.entries(values).forEach(([id, value]) => { $(id).value = value; });
+        $('adjustHeight').checked = false;
+        $('advancedSettings').open = false;
+        $('technicalDetails').open = false;
+        $('referenceDetails').open = false;
+        cpEdited = false;
+        $('heightFields').style.display = 'none';
+        $('updatedStatus').textContent = 'Results update automatically as you edit';
+        updateGeometryHelp();
+        calculate();
+      }
+
+      function updateGeometryHelp() {
+        const type = $('turbineType').value;
+        const isVawt = type === 'VAWT';
+        $('heightField').style.display = isVawt ? '' : 'none';
+        $('geometryHelp').textContent = isVawt
+          ? 'For a VAWT, rotor width and height estimate the area crossed by the blades. Use the rotating part’s dimensions, not the tower.'
+          : 'For a HAWT, enter the full blade-tip-to-blade-tip diameter; the calculator estimates the circle swept by the blades.';
+        $('areaFoot').textContent = isVawt ? 'VAWT H-rotor approximation' : 'HAWT circular rotor area';
+        $('cpHelp').textContent = isVawt
+          ? 'Share of wind power the blades capture; 0.30 is a rough VAWT example.'
+          : 'Share of wind power the blades capture; 0.45–0.50 is an illustrative HAWT range.';
+      }
+
+      function readInputs() {
+        const type = $('turbineType').value;
+        const d = num('diameter');
+        const h = num('rotorHeight');
+        const rated = num('ratedPower');
+        const hubHeight = num('hubHeight');
+        const rawWind = num('windSpeed');
+        const rho = num('density');
+        const cp = num('cp');
+        const etaPct = num('efficiency');
+        const cutIn = num('cutIn');
+        const cutOut = num('cutOut');
+        const cfPct = num('siteCF');
+        const targetMWh = num('targetEnergy');
+        const spacing = num('spacing');
+        const minMultiplier = num('minMultiplier');
+        const ct = num('thrust');
+        const kappa = num('wakeDecay');
+        const referenceHeight = num('referenceHeight');
+        const alpha = num('shearExponent');
+        const adjustHeight = $('adjustHeight').checked;
+        const errors = [];
+
+        if (!(d > 0)) errors.push('Rotor diameter must be greater than zero.');
+        if (type === 'VAWT' && !(h > 0)) errors.push('VAWT rotor height must be greater than zero.');
+        if (!(rated > 0)) errors.push('Rated power must be greater than zero.');
+        if (!(hubHeight > 0)) errors.push('Hub height must be greater than zero.');
+        if (!(rawWind >= 0)) errors.push('Local wind speed must be zero or greater.');
+        if (!(rho > 0)) errors.push('Air density must be greater than zero.');
+        if (!(cp > 0 && cp <= BETZ + 1e-9)) errors.push('Cp must be greater than zero and no higher than the Betz limit (0.593).');
+        if (!(etaPct > 0 && etaPct <= 100)) errors.push('System efficiency must be greater than 0% and at most 100%.');
+        if (!(cutIn >= 0)) errors.push('Cut-in speed must be zero or greater.');
+        if (Number.isFinite(cutOut) && cutOut > 0 && cutOut <= cutIn) errors.push('Cut-out speed must be higher than cut-in, or left blank.');
+        if (!(cfPct >= 0 && cfPct <= 100)) errors.push('Site capacity factor must be between 0% and 100%.');
+        if (!(targetMWh >= 0)) errors.push('Annual energy target must be zero or greater.');
+        if (!(spacing >= 0)) errors.push('Downstream spacing must be zero or greater.');
+        if (!(minMultiplier > 0)) errors.push('Minimum spacing multiplier must be greater than zero.');
+        if (!(ct >= 0 && ct < 1)) errors.push('Ct must be at least zero and less than 1.');
+        if (!(kappa >= 0)) errors.push('Wake decay constant κ must be zero or greater.');
+        if (adjustHeight && !(referenceHeight > 0)) errors.push('Measurement height must be greater than zero when height adjustment is enabled.');
+        if (adjustHeight && !(alpha >= 0 && alpha <= 1)) errors.push('Shear exponent α must be between 0 and 1.');
+
+        return { type, d, h, rated, hubHeight, rawWind, rho, cp, eta: etaPct / 100, cutIn, cutOut, cf: cfPct / 100, targetMWh, spacing, minMultiplier, ct, kappa, referenceHeight, alpha, adjustHeight, errors };
+      }
+
+      function electricalPowerAt(v, input, area) {
+        const windKw = 0.5 * input.rho * area * Math.pow(Math.max(0, v), 3) / 1000;
+        const rotorKw = windKw * input.cp;
+        const rawElecKw = rotorKw * input.eta;
+        let status = 'Model estimate';
+        let outputKw = Math.min(input.rated, rawElecKw);
+        if (v < input.cutIn) {
+          outputKw = 0;
+          status = 'Below cut-in';
+        } else if (Number.isFinite(input.cutOut) && input.cutOut > 0 && v >= input.cutOut) {
+          outputKw = 0;
+          status = 'Above cut-out';
+        } else if (rawElecKw >= input.rated) {
+          outputKw = input.rated;
+          status = 'Capped at rated';
+        }
+        return { windKw, rotorKw, rawElecKw, outputKw, status };
+      }
+
+      function wakeWind(u, x, d, ct, kappa, model) {
+        if (u <= 0 || x < 0 || d <= 0) return 0;
+        const initialDeficit = 1 - Math.sqrt(Math.max(0, 1 - ct));
+        const expansion = 2 * kappa * x / d;
+        const denominator = model === 'legacy' ? 1 + expansion * expansion : Math.pow(1 + expansion, 2);
+        const remaining = clamp(1 - initialDeficit / denominator, 0, 1);
+        return u * remaining;
+      }
+
+      function drawCurve(input, area, veq, hubWind) {
+        const svg = $('curveChart');
+        const W = 560, H = 240, left = 52, right = 18, top = 18, bottom = 34;
+        const plotW = W - left - right, plotH = H - top - bottom;
+        const xMax = Math.max(12, veq * 1.28, hubWind * 1.18, input.cutIn * 2.2, Number.isFinite(input.cutOut) && input.cutOut > 0 ? Math.min(input.cutOut * 1.08, 60) : 0);
+        const yMax = input.rated;
+        const X = (v) => left + (v / xMax) * plotW;
+        const Y = (p) => top + plotH - (clamp(p / yMax, 0, 1) * plotH);
+        const parts = [];
+        parts.push(`<title>Illustrative turbine power output from 0 to ${fmt(xMax,1)} metres per second</title>`);
+        parts.push(`<desc>Constant-Cp cubic estimate with a cut-in threshold and rated power cap. A marker indicates the selected wind speed.</desc>`);
+        for (let i = 0; i <= 2; i++) {
+          const p = yMax * i / 2;
+          const y = Y(p);
+          parts.push(`<line x1="${left}" y1="${y}" x2="${W-right}" y2="${y}" stroke="#e2e8f0" stroke-width="1"/>`);
+          parts.push(`<text x="${left-9}" y="${y+3}" text-anchor="end" font-size="9" fill="#64748b">${fmt(p,1)}</text>`);
+        }
+        for (let i = 0; i <= 4; i++) {
+          const v = xMax * i / 4;
+          const x = X(v);
+          parts.push(`<line x1="${x}" y1="${top}" x2="${x}" y2="${top+plotH}" stroke="#f1f5f9" stroke-width="1"/>`);
+          parts.push(`<text x="${x}" y="${H-11}" text-anchor="middle" font-size="9" fill="#64748b">${fmt(v,1)}</text>`);
+        }
+        parts.push(`<text x="${left}" y="11" font-size="9" fill="#64748b">Power (kW)</text>`);
+        parts.push(`<text x="${W-right}" y="${H-1}" text-anchor="end" font-size="9" fill="#64748b">Wind speed (m/s)</text>`);
+        let d = '';
+        const samples = 100;
+        for (let i = 0; i <= samples; i++) {
+          const v = xMax * i / samples;
+          const power = electricalPowerAt(v, input, area).outputKw;
+          d += `${i === 0 ? 'M' : 'L'} ${X(v).toFixed(2)} ${Y(power).toFixed(2)} `;
+        }
+        const areaPath = `${d}L ${X(xMax).toFixed(2)} ${Y(0).toFixed(2)} L ${X(0).toFixed(2)} ${Y(0).toFixed(2)} Z`;
+        parts.push(`<defs><linearGradient id="curveFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0d9488" stop-opacity=".23"/><stop offset="100%" stop-color="#0d9488" stop-opacity=".025"/></linearGradient></defs>`);
+        parts.push(`<path d="${areaPath}" fill="url(#curveFill)"/>`);
+        parts.push(`<path d="${d}" fill="none" stroke="#0d9488" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`);
+        const selectedX = X(clamp(hubWind, 0, xMax));
+        const selectedP = electricalPowerAt(hubWind, input, area).outputKw;
+        parts.push(`<line x1="${selectedX}" y1="${top}" x2="${selectedX}" y2="${top+plotH}" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4 4"/>`);
+        parts.push(`<circle cx="${selectedX}" cy="${Y(selectedP)}" r="5" fill="#d97706" stroke="#fff" stroke-width="2"/>`);
+        svg.innerHTML = parts.join('');
+      }
+
+      function setWakeCard(prefix, distance, wind, power, upstreamPower) {
+        $(`${prefix}DistanceValue`).textContent = `${fmt(distance, 1)} m`;
+        $(`${prefix}WakeWind`).textContent = `${fmt(wind, 2)} m/s`;
+        $(`${prefix}WakePower`).textContent = `${fmt(power, 3)} kW`;
+        const loss = upstreamPower > 0 ? clamp(1 - power / upstreamPower, -1, 1) : NaN;
+        $(`${prefix}WakeLoss`).textContent = Number.isFinite(loss) ? percent(loss, 1) : '—';
+      }
+
+      function calculate() {
+        updateGeometryHelp();
+        const input = readInputs();
+        const errorBox = $('errorBox');
+        if (input.errors.length) {
+          errorBox.style.display = 'block';
+          errorBox.innerHTML = `<strong>Check these inputs:</strong><br>${input.errors.map((e) => `• ${e}`).join('<br>')}`;
+          $('powerValue').textContent = '—';
+          $('dockPower').textContent = '—';
+          $('targetTrack').style.display = 'none';
+          $('targetCoverage').textContent = '—';
+          $('aepValue').textContent = '—';
+          $('areaValue').textContent = '—';
+          $('windPowerValue').textContent = '—';
+          $('rotorPowerValue').textContent = '—';
+          $('equivalentSpeed').textContent = '—';
+          $('requiredCF').textContent = '—';
+          $('flatEnergy').textContent = '—';
+          $('targetProgress').style.width = '0%';
+          lastResults = null;
+          return;
+        }
+        errorBox.style.display = 'none';
+        const area = input.type === 'HAWT' ? Math.PI * Math.pow(input.d / 2, 2) : input.d * input.h;
+        const hubWind = input.adjustHeight ? input.rawWind * Math.pow(input.hubHeight / input.referenceHeight, input.alpha) : input.rawWind;
+        const p = electricalPowerAt(hubWind, input, area);
+        const equivalentSpeed = Math.pow((2 * input.rated * 1000) / (input.rho * area * input.cp * input.eta), 1/3);
+        const annualMWh = input.rated * HOURS_PER_YEAR / 1000 * input.cf;
+        const flatMWh = p.outputKw * HOURS_PER_YEAR / 1000;
+        const ratedAnnualMWh = input.rated * HOURS_PER_YEAR / 1000;
+        const requiredCf = input.targetMWh > 0 ? input.targetMWh / ratedAnnualMWh : NaN;
+        const coverage = input.targetMWh > 0 ? annualMWh / input.targetMWh : NaN;
+        const targetWidth = Number.isFinite(coverage) ? clamp(coverage * 100, 0, 100) : 0;
+        const minDistance = input.minMultiplier * input.d;
+        const minWakeWind = wakeWind(hubWind, minDistance, input.d, input.ct, input.kappa, $('wakeModel').value);
+        const givenWakeWind = wakeWind(hubWind, input.spacing, input.d, input.ct, input.kappa, $('wakeModel').value);
+        const minWakePower = electricalPowerAt(minWakeWind, input, area).outputKw;
+        const givenWakePower = electricalPowerAt(givenWakeWind, input, area).outputKw;
+
+        $('powerValue').textContent = fmt(p.outputKw, 3);
+        $('dockPower').textContent = fmt(p.outputKw, 3);
+        $('powerSubtitle').textContent = `At ${fmt(hubWind, 2)} m/s at rotor height · ${input.adjustHeight ? `adjusted from ${fmt(input.rawWind, 2)} m/s` : 'assuming the entered speed is at rotor height'}`;
+        $('powerStatus').textContent = p.status;
+        $('areaValue').textContent = fmt(area, 2);
+        $('windPowerValue').textContent = fmt(p.windKw, 3);
+        $('rotorPowerValue').textContent = fmt(p.rotorKw, 3);
+        $('equivalentSpeed').textContent = fmt(equivalentSpeed, 2);
+        $('requiredCF').textContent = Number.isFinite(requiredCf) ? fmt(requiredCf * 100, 1) : '—';
+        $('flatEnergy').textContent = fmt(flatMWh, 2);
+        $('aepValue').textContent = fmt(annualMWh, 2);
+        $('aepFine').textContent = `Rated power × ${fmt(input.cf * 100, 1)}% capacity factor · screening estimate`;
+        $('targetCoverage').textContent = Number.isFinite(coverage) ? percent(coverage, 1) : 'Not set';
+        $('targetTrack').style.display = input.targetMWh > 0 ? 'block' : 'none';
+        $('targetProgress').style.width = `${targetWidth}%`;
+        $('targetProgressLabel').textContent = input.targetMWh > 0 ? `Target coverage · ${fmt(input.targetMWh, 2)} MWh/year` : 'Optional target comparison';
+        $('minDistanceValue').textContent = `${fmt(minDistance, 1)} m`;
+        $('givenDistanceValue').textContent = `${fmt(input.spacing, 1)} m`;
+        $('minWakeWind').textContent = `${fmt(minWakeWind, 2)} m/s`;
+        $('givenWakeWind').textContent = `${fmt(givenWakeWind, 2)} m/s`;
+        $('minWakePower').textContent = `${fmt(minWakePower, 3)} kW`;
+        $('givenWakePower').textContent = `${fmt(givenWakePower, 3)} kW`;
+        $('minWakeLoss').textContent = p.outputKw > 0 ? percent(1 - minWakePower / p.outputKw, 1) : '—';
+        $('givenWakeLoss').textContent = p.outputKw > 0 ? percent(1 - givenWakePower / p.outputKw, 1) : '—';
+        $('spacingRuleValue').textContent = `${fmt(input.minMultiplier, 1)} × D`;
+        $('wakeDiameter').textContent = `${fmt(input.d, 2)} m`;
+        $('wakeHubHeight').textContent = `${fmt(input.hubHeight, 1)} m`;
+        $('wakeModelTag').textContent = $('wakeModel').value === 'legacy' ? 'Workbook equation' : 'Standard Jensen';
+        $('wakeNote').textContent = $('wakeModel').value === 'legacy'
+          ? `Workbook compatibility equation with Ct = ${fmt(input.ct, 2)} and κ = ${fmt(input.kappa, 3)}. It reproduces the spreadsheet's denominator form; use only to compare against that workbook. The result is a single-row, aligned-wake screen, not a farm layout design.`
+          : `Standard Jensen form with Ct = ${fmt(input.ct, 2)} and κ = ${fmt(input.kappa, 3)}. The decay constant is site-dependent. Real wake loss depends on terrain, turbulence, array direction, partial rotor overlap and turbine control; do not use this single-row result for a layout design.`;
+        $('wakeAlert').style.display = input.spacing < minDistance ? 'block' : 'none';
+        $('wakeAlert').textContent = input.spacing < minDistance
+          ? `Given spacing (${fmt(input.spacing,1)} m) is below the selected minimum rule (${fmt(minDistance,1)} m = ${fmt(input.minMultiplier,1)}D). Treat this as a warning for screening, not a design limit.`
+          : `Given spacing is at or above the selected ${fmt(input.minMultiplier,1)}D minimum-spacing rule.`;
+        $('wakeAlert').style.background = input.spacing < minDistance ? 'var(--amber-pale)' : 'var(--teal-pale)';
+        $('wakeAlert').style.color = input.spacing < minDistance ? '#92400e' : 'var(--teal-dark)';
+        $('spacingStatus').textContent = input.spacing < minDistance ? 'Below selected rule' : 'At / above selected rule';
+        $('spacingStatus').className = input.spacing < minDistance ? 'tag amber' : 'tag green';
+        if (Number.isFinite(requiredCf) && requiredCf > 0.4) {
+          $('aepTag').textContent = 'High target CF';
+          $('aepTag').className = 'tag amber';
+        } else {
+          $('aepTag').textContent = 'Yearly estimate';
+          $('aepTag').className = 'tag green';
+        }
+        if ($('wakeModel').value === 'legacy') {
+          $('updatedStatus').textContent = 'Legacy wake equation selected · compatibility mode';
+        } else {
+          $('updatedStatus').textContent = 'Results update automatically as you edit';
+        }
+        drawCurve(input, area, equivalentSpeed, hubWind);
+        $('curveFoot').textContent = `Model Cp ${fmt(input.cp,3)} · η ${fmt(input.eta*100,0)}% · cut-in ${fmt(input.cutIn,1)} m/s`;
+        lastResults = { input, area, hubWind, power: p, equivalentSpeed, annualMWh, flatMWh, ratedAnnualMWh, requiredCf, coverage, minDistance, minWakeWind, givenWakeWind, minWakePower, givenWakePower };
+      }
+
+      function loadWorkbookExample() {
+        const values = {
+          turbineType: 'VAWT', diameter: '1.2', rotorHeight: '2', ratedPower: '1', hubHeight: '6',
+          windSpeed: '9', density: '1.225', cp: '0.593', efficiency: '75', cutIn: '3.5', cutOut: '',
+          referenceHeight: '6', shearExponent: '0.14', sitePreset: 'gulf', siteCF: '35', targetEnergy: '6',
+          spacing: '10', minMultiplier: '5', thrust: '0.85', wakeDecay: '0.04', wakeModel: 'legacy'
+        };
+        Object.entries(values).forEach(([id, value]) => { $(id).value = value; });
+        $('adjustHeight').checked = false;
+        cpEdited = true;
+        calculate();
+        $('updatedStatus').textContent = 'Spreadsheet comparison loaded · original workbook assumptions';
+        showToast('Spreadsheet comparison loaded. Cp = 0.593 is a theoretical limit, not a typical operating value.');
+      }
+
+      function downloadCsv() {
+        if (!lastResults) { showToast('Fix the input errors before downloading a result.'); return; }
+        const r = lastResults;
+        const rows = [
+          ['Wind turbine quick performance estimate', ''],
+          ['Model', 'Simplified constant-Cp screening estimate'],
+          ['Turbine type', r.input.type],
+          ['Rotor diameter (m)', r.input.d],
+          ['Rotor height (m; VAWT only)', r.input.type === 'VAWT' ? r.input.h : ''],
+          ['Hub height (m)', r.input.hubHeight],
+          ['Swept area (m2)', r.area],
+          ['Rated electrical power (kW)', r.input.rated],
+          ['Wind speed at rotor height (m/s)', r.hubWind],
+          ['Air density (kg/m3)', r.input.rho],
+          ['Power coefficient Cp', r.input.cp],
+          ['System efficiency', r.input.eta],
+          ['Power in wind (kW)', r.power.windKw],
+          ['Rotor mechanical power (kW)', r.power.rotorKw],
+          ['Estimated electrical power (kW)', r.power.outputKw],
+          ['Model-equivalent rated speed (m/s; not official)', r.equivalentSpeed],
+          ['Site capacity factor', r.input.cf],
+          ['Site-based AEP estimate (MWh/year)', r.annualMWh],
+          ['Flat-speed annualization (MWh/year; not AEP)', r.flatMWh],
+          ['Annual energy target (MWh/year)', r.input.targetMWh],
+          ['Required capacity factor for target', Number.isFinite(r.requiredCf) ? r.requiredCf : ''],
+          ['Downstream spacing (m)', r.input.spacing],
+          ['Wake formula', $('wakeModel').value],
+          ['Wake Ct', r.input.ct],
+          ['Wake decay kappa', r.input.kappa],
+          ['Note', 'Pre-feasibility only. Use certified turbine curves and measured site wind data for engineering decisions.']
+        ];
+        const csv = rows.map(row => row.map(value => `"${String(value ?? '').replaceAll('"','""')}"`).join(',')).join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'wind-turbine-quick-estimate.csv';
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+        showToast('Estimate CSV downloaded.');
+      }
+
+      $('turbineType').addEventListener('change', () => {
+        updateGeometryHelp();
+        if (!cpEdited) $('cp').value = $('turbineType').value === 'HAWT' ? '0.47' : '0.30';
+        calculate();
+      });
+      $('cp').addEventListener('input', () => { cpEdited = true; calculate(); });
+      $('adjustHeight').addEventListener('change', () => {
+        $('heightFields').style.display = $('adjustHeight').checked ? 'block' : 'none';
+        calculate();
+      });
+      $('sitePreset').addEventListener('change', () => {
+        if ($('sitePreset').value === 'gulf') $('siteCF').value = '35';
+        if ($('sitePreset').value === 'secondary') $('siteCF').value = '22.5';
+        calculate();
+      });
+      $('siteCF').addEventListener('input', () => {
+        $('sitePreset').value = 'custom';
+        calculate();
+      });
+      fields.filter(id => !['turbineType','cp','adjustHeight','sitePreset','siteCF'].includes(id)).forEach(id => {
+        $(id).addEventListener('input', calculate);
+        $(id).addEventListener('change', calculate);
+      });
+      $('loadExample').addEventListener('click', loadWorkbookExample);
+      $('resetButton').addEventListener('click', () => { setDefaults(); showToast('Example values restored. Replace them with your own data.'); });
+      $('csvButton').addEventListener('click', downloadCsv);
+      $('printButton').addEventListener('click', () => window.print());
+      $('viewResults').addEventListener('click', () => $('results-heading').scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      $('openGuideButton').addEventListener('click', () => {
+        $('referenceDetails').open = true;
+        $('parameterGuide').open = true;
+        $('parameterGuide').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      setDefaults();
+    })();
+  </script>
+</body>
+</html>
